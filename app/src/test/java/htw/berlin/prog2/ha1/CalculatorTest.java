@@ -108,5 +108,38 @@ class CalculatorTest {
 
         assertEquals(expected, actual);
     }
+
+    @Test
+    @DisplayName("should display zero when multiplying any number by zero")
+    void testMultiplicationByZero() {
+        Calculator calc = new Calculator();
+
+        calc.pressDigitKey(9);
+        calc.pressBinaryOperationKey("*");
+        calc.pressDigitKey(0);
+        calc.pressEqualsKey();
+
+        String expected = "0";  // 9 * 0 = 0
+        String actual = calc.readScreen();
+
+        assertEquals(expected, actual);  // Test schlägt fehl, wenn die Multiplikation mit Null falsch behandelt wird
+    }
+
+    @Test
+    @DisplayName("should display error when pressing two operation keys consecutively")
+    void testConsecutiveOperations() {
+        Calculator calc = new Calculator();
+
+        calc.pressDigitKey(5);
+        calc.pressBinaryOperationKey("+");
+        calc.pressBinaryOperationKey("+");
+        calc.pressDigitKey(3);
+        calc.pressEqualsKey();
+
+        String expected = "Error";  // Der Calculator sollte einen Fehler anzeigen, wenn zwei Operationszeichen direkt hintereinander eingegeben werden
+        String actual = calc.readScreen();
+
+        assertEquals(expected, actual);  // Test schlägt fehl, wenn der Calculator keine Fehler bei doppelten Operationszeichen anzeigt
+    }
 }
 

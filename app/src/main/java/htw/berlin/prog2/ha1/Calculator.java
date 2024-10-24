@@ -9,10 +9,9 @@ package htw.berlin.prog2.ha1;
 public class Calculator {
 
     private String screen = "0";
-
     private double latestValue;
-
     private String latestOperation = "";
+    private boolean lastKeyWasOperation = false;  // Neuen Status-Tracker hinzufügen
 
     /**
      * @return den aktuellen Bildschirminhalt als String
@@ -29,11 +28,14 @@ public class Calculator {
      * @param digit Die Ziffer, deren Taste gedrückt wurde
      */
     public void pressDigitKey(int digit) {
-        if(digit > 9 || digit < 0) throw new IllegalArgumentException();
+        if (digit > 9 || digit < 0) throw new IllegalArgumentException();
 
-        if(screen.equals("0") || latestValue == Double.parseDouble(screen)) screen = "";
+        if (screen.equals("0") || lastKeyWasOperation) {
+            screen = ""; // Wenn die letzte Taste eine Operation war, den Bildschirm leeren
+        }
 
         screen = screen + digit;
+        lastKeyWasOperation = false;  // Setze zurück, wenn eine Ziffer gedrückt wird
     }
 
     /**
@@ -48,6 +50,7 @@ public class Calculator {
         screen = "0";
         latestOperation = "";
         latestValue = 0.0;
+        lastKeyWasOperation = false;  // Status zurücksetzen
     }
 
     /**
@@ -59,9 +62,19 @@ public class Calculator {
      * auf dem Bildschirm angezeigt. Falls hierbei eine Division durch Null auftritt, wird "Error" angezeigt.
      * @param operation "+" für Addition, "-" für Substraktion, "x" für Multiplikation, "/" für Division
      */
-    public void pressBinaryOperationKey(String operation)  {
+    public void pressBinaryOperationKey(String operation) {
+        if (lastKeyWasOperation) {  // Überprüfen, ob die letzte Taste eine Operation war
+            screen = "Error";  // Fehler anzeigen
+            return;
+        }
+
+        if (latestOperation.equals("") && screen.equals("0")) {
+            return; // Keine Operation, wenn der Bildschirm nur Null zeigt
+        }
+
         latestValue = Double.parseDouble(screen);
         latestOperation = operation;
+        lastKeyWasOperation = true;  // Setze den Status, dass die letzte Taste eine Operation war
     }
 
     /**
@@ -74,27 +87,26 @@ public class Calculator {
     public void pressUnaryOperationKey(String operation) {
         latestValue = Double.parseDouble(screen);
         latestOperation = operation;
-        var result = switch(operation) {
+        var result = switch (operation) {
             case "√" -> Math.sqrt(Double.parseDouble(screen));
             case "%" -> Double.parseDouble(screen) / 100;
             case "1/x" -> 1 / Double.parseDouble(screen);
             default -> throw new IllegalArgumentException();
         };
         screen = Double.toString(result);
-        if(screen.equals("NaN")) screen = "Error";
-        if(screen.contains(".") && screen.length() > 11) screen = screen.substring(0, 10);
-
+        if (screen.equals("NaN")) screen = "Error";
+        if (screen.contains(".") && screen.length() > 11) screen = screen.substring(0, 10);
     }
 
     /**
-     * Empfängt den Befehl der gedrückten Dezimaltrennzeichentaste, im Englischen üblicherweise "."
+     * Empfängt den Befehl der gedrückten Dezimaltrennzeichentaste, im Englischen üblicherweise ".".
      * Fügt beim ersten Mal Drücken dem aktuellen Bildschirminhalt das Trennzeichen auf der rechten
      * Seite hinzu und aktualisiert den Bildschirm. Daraufhin eingegebene Zahlen werden rechts vom
      * Trennzeichen angegeben und daher als Dezimalziffern interpretiert.
      * Beim zweimaligem Drücken, oder wenn bereits ein Trennzeichen angezeigt wird, passiert nichts.
      */
     public void pressDotKey() {
-        if(!screen.contains(".")) screen = screen + ".";
+        if (!screen.contains(".")) screen = screen + ".";
     }
 
     /**
@@ -111,23 +123,52 @@ public class Calculator {
     /**
      * Empfängt den Befehl der gedrückten "="-Taste.
      * Wurde zuvor keine Operationstaste gedrückt, passiert nichts.
-     * Wurde zuvor eine binäre Operationstaste gedrückt und zwei Operanden eingegeben, wird das
-     * Ergebnis der Operation angezeigt. Falls hierbei eine Division durch Null auftritt, wird "Error" angezeigt.
+     * Wurde zuvor eine binäre Operationstaste gedrückt und zwei Operanden eingegeben,
+     * wird das Ergebnis der Operation angezeigt. Falls hierbei eine Division durch Null auftritt,
+     * wird "Error" angezeigt.
+     *
      * Wird die Taste weitere Male gedrückt (ohne andere Tasten dazwischen), so wird die letzte
      * Operation (ggf. inklusive letztem Operand) erneut auf den aktuellen Bildschirminhalt angewandt
      * und das Ergebnis direkt angezeigt.
+     *
+     * Das Ergebnis wird formatiert. Wenn das Ergebnis ganzzahlig ist, wird es als Ganzzahl angezeigt.
+     * Andernfalls wird es als Dezimalzahl angezeigt.
+     *
+     * Nach der Ausführung dieser Methode wird die letzte Operation zurückgesetzt
+     * und der Status der letzten gedrückten Taste ebenfalls zurückgesetzt.
      */
+
     public void pressEqualsKey() {
-        var result = switch(latestOperation) {
-            case "+" -> latestValue + Double.parseDouble(screen);
-            case "-" -> latestValue - Double.parseDouble(screen);
-            case "x" -> latestValue * Double.parseDouble(screen);
-            case "/" -> latestValue / Double.parseDouble(screen);
-            default -> throw new IllegalArgumentException();
-        };
-        screen = Double.toString(result);
-        if(screen.equals("Infinity")) screen = "Error";
-        if(screen.endsWith(".0")) screen = screen.substring(0,screen.length()-2);
-        if(screen.contains(".") && screen.length() > 11) screen = screen.substring(0, 10);
+        if (latestOperation.isEmpty()) {
+            return; // Keine Operation, nichts tun
+        }
+
+        double result;
+        switch (latestOperation) {
+            case "+":
+                result = latestValue + Double.parseDouble(screen);
+                break;
+            case "-":
+                result = latestValue - Double.parseDouble(screen);
+                break;
+            case "*":
+                result = latestValue * Double.parseDouble(screen);
+                break;
+            case "/":
+                if (Double.parseDouble(screen) == 0) {
+                    screen = "Error"; // Division durch Null
+                    return;
+                }
+                result = latestValue / Double.parseDouble(screen);
+                break;
+            default:
+                return; // Unbekannte Operation, nichts tun
+        }
+
+        // Formatieren des Ergebnisses
+        screen = (result == (int) result) ? String.valueOf((int) result) : String.valueOf(result);
+        latestOperation = ""; // Zurücksetzen der letzten Operation
+        lastKeyWasOperation = false; // Zurücksetzen des Status
     }
+
 }
