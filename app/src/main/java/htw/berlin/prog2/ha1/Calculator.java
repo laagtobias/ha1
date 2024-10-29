@@ -138,9 +138,12 @@ public class Calculator {
             default -> throw new IllegalArgumentException();
         };
 
-        // Ergebnis auf dem Bildschirm anzeigen
-        // Wenn das Ergebnis 0 ist, zeige "0" an, andernfalls das Ergebnis
-        screen = (result == 0) ? "0" : Double.toString(result);
+        if (result == 0) {
+            screen = "0";
+        } else {
+            screen = Double.toString(result);
+        }
+
 
         // Überprüfen, ob das Ergebnis "Infinity" ist
         if(screen.equals("Infinity")) screen = "Error";
