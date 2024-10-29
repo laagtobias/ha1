@@ -1,174 +1,145 @@
 package htw.berlin.prog2.ha1;
 
-/**
- * Eine Klasse, die das Verhalten des Online Taschenrechners imitiert, welcher auf
- * https://www.online-calculator.com/ aufgerufen werden kann (ohne die Memory-Funktionen)
- * und dessen Bildschirm bis zu zehn Ziffern plus einem Dezimaltrennzeichen darstellen kann.
- * Enthält mit Absicht noch diverse Bugs oder unvollständige Funktionen.
- */
-public class Calculator {
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
-    private String screen = "0";
-    private double latestValue;
-    private String latestOperation = "";
-    private boolean lastKeyWasOperation = false;  // Neuen Status-Tracker hinzufügen
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-    /**
-     * @return den aktuellen Bildschirminhalt als String
-     */
-    public String readScreen() {
-        return screen;
+@DisplayName("Retro calculator")
+class CalculatorTest {
+
+    @Test
+    @DisplayName("should display result after adding two positive multi-digit numbers")
+    void testPositiveAddition() {
+        Calculator calc = new Calculator();
+
+        calc.pressDigitKey(2);
+        calc.pressDigitKey(0);
+        calc.pressBinaryOperationKey("+");
+        calc.pressDigitKey(2);
+        calc.pressDigitKey(0);
+        calc.pressEqualsKey();
+
+        String expected = "40";
+        String actual = calc.readScreen();
+
+        assertEquals(expected, actual);
     }
 
-    /**
-     * Empfängt den Wert einer gedrückten Zifferntaste. Da man nur eine Taste auf einmal
-     * drücken kann muss der Wert positiv und einstellig sein und zwischen 0 und 9 liegen.
-     * Führt in jedem Fall dazu, dass die gerade gedrückte Ziffer auf dem Bildschirm angezeigt
-     * oder rechts an die zuvor gedrückte Ziffer angehängt angezeigt wird.
-     * @param digit Die Ziffer, deren Taste gedrückt wurde
-     */
-    public void pressDigitKey(int digit) {
-        if (digit > 9 || digit < 0) throw new IllegalArgumentException();
+    @Test
+    @DisplayName("should display result after getting the square root of two")
+    void testSquareRoot() {
+        Calculator calc = new Calculator();
 
-        if (screen.equals("0") || lastKeyWasOperation) {
-            screen = ""; // Wenn die letzte Taste eine Operation war, den Bildschirm leeren
-        }
+        calc.pressDigitKey(2);
+        calc.pressUnaryOperationKey("√");
 
-        screen = screen + digit;
-        lastKeyWasOperation = false;  // Setze zurück, wenn eine Ziffer gedrückt wird
+        String expected = "1.41421356";
+        String actual = calc.readScreen();
+
+        assertEquals(expected, actual);
     }
 
-    /**
-     * Empfängt den Befehl der C- bzw. CE-Taste (Clear bzw. Clear Entry).
-     * Einmaliges Drücken der Taste löscht die zuvor eingegebenen Ziffern auf dem Bildschirm
-     * so dass "0" angezeigt wird, jedoch ohne zuvor zwischengespeicherte Werte zu löschen.
-     * Wird daraufhin noch einmal die Taste gedrückt, dann werden auch zwischengespeicherte
-     * Werte sowie der aktuelle Operationsmodus zurückgesetzt, so dass der Rechner wieder
-     * im Ursprungszustand ist.
-     */
-    public void pressClearKey() {
-        screen = "0";
-        latestOperation = "";
-        latestValue = 0.0;
-        lastKeyWasOperation = false;  // Status zurücksetzen
+    @Test
+    @DisplayName("should display error when dividing by zero")
+    void testDivisionByZero() {
+        Calculator calc = new Calculator();
+
+        calc.pressDigitKey(7);
+        calc.pressBinaryOperationKey("/");
+        calc.pressDigitKey(0);
+        calc.pressEqualsKey();
+
+        String expected = "Error";
+        String actual = calc.readScreen();
+
+        assertEquals(expected, actual);
     }
 
-    /**
-     * Empfängt den Wert einer gedrückten binären Operationstaste, also eine der vier Operationen
-     * Addition, Substraktion, Division, oder Multiplikation, welche zwei Operanden benötigen.
-     * Beim ersten Drücken der Taste wird der Bildschirminhalt nicht verändert, sondern nur der
-     * Rechner in den passenden Operationsmodus versetzt.
-     * Beim zweiten Drücken nach Eingabe einer weiteren Zahl wird direkt des aktuelle Zwischenergebnis
-     * auf dem Bildschirm angezeigt. Falls hierbei eine Division durch Null auftritt, wird "Error" angezeigt.
-     * @param operation "+" für Addition, "-" für Substraktion, "x" für Multiplikation, "/" für Division
-     */
-    public void pressBinaryOperationKey(String operation) {
-        if (lastKeyWasOperation) {  // Überprüfen, ob die letzte Taste eine Operation war
-            screen = "Error";  // Fehler anzeigen
-            return;
-        }
+    @Test
+    @DisplayName("should display error when drawing the square root of a negative number")
+    void testSquareRootOfNegative() {
+        Calculator calc = new Calculator();
 
-        if (latestOperation.equals("") && screen.equals("0")) {
-            return; // Keine Operation, wenn der Bildschirm nur Null zeigt
-        }
+        calc.pressDigitKey(7);
+        calc.pressNegativeKey();
+        calc.pressUnaryOperationKey("√");
 
-        latestValue = Double.parseDouble(screen);
-        latestOperation = operation;
-        lastKeyWasOperation = true;  // Setze den Status, dass die letzte Taste eine Operation war
+        String expected = "Error";
+        String actual = calc.readScreen();
+
+        assertEquals(expected, actual);
     }
 
-    /**
-     * Empfängt den Wert einer gedrückten unären Operationstaste, also eine der drei Operationen
-     * Quadratwurzel, Prozent, Inversion, welche nur einen Operanden benötigen.
-     * Beim Drücken der Taste wird direkt die Operation auf den aktuellen Zahlenwert angewendet und
-     * der Bildschirminhalt mit dem Ergebnis aktualisiert.
-     * @param operation "√" für Quadratwurzel, "%" für Prozent, "1/x" für Inversion
-     */
-    public void pressUnaryOperationKey(String operation) {
-        latestValue = Double.parseDouble(screen);
-        latestOperation = operation;
-        var result = switch (operation) {
-            case "√" -> Math.sqrt(Double.parseDouble(screen));
-            case "%" -> Double.parseDouble(screen) / 100;
-            case "1/x" -> 1 / Double.parseDouble(screen);
-            default -> throw new IllegalArgumentException();
-        };
-        screen = Double.toString(result);
-        if (screen.equals("NaN")) screen = "Error";
-        if (screen.contains(".") && screen.length() > 11) screen = screen.substring(0, 10);
+    @Test
+    @DisplayName("should not allow multiple decimal dots")
+    void testMultipleDecimalDots() {
+        Calculator calc = new Calculator();
+
+        calc.pressDigitKey(1);
+        calc.pressDotKey();
+        calc.pressDigitKey(7);
+        calc.pressDotKey();
+        calc.pressDigitKey(8);
+
+        String expected = "1.78";
+        String actual = calc.readScreen();
+
+        assertEquals(expected, actual);
     }
 
-    /**
-     * Empfängt den Befehl der gedrückten Dezimaltrennzeichentaste, im Englischen üblicherweise ".".
-     * Fügt beim ersten Mal Drücken dem aktuellen Bildschirminhalt das Trennzeichen auf der rechten
-     * Seite hinzu und aktualisiert den Bildschirm. Daraufhin eingegebene Zahlen werden rechts vom
-     * Trennzeichen angegeben und daher als Dezimalziffern interpretiert.
-     * Beim zweimaligem Drücken, oder wenn bereits ein Trennzeichen angezeigt wird, passiert nichts.
-     */
-    public void pressDotKey() {
-        if (!screen.contains(".")) screen = screen + ".";
+
+    //TODO hier weitere Tests erstellen
+
+    @Test
+    @DisplayName("should display result after subtracting two positive numbers")
+    void testPositiveSubtraction() {
+        Calculator calc = new Calculator();
+
+        calc.pressDigitKey(5);
+        calc.pressDigitKey(0);
+        calc.pressBinaryOperationKey("-");
+        calc.pressDigitKey(2);
+        calc.pressDigitKey(0);
+        calc.pressEqualsKey();
+
+        String expected = "30";
+        String actual = calc.readScreen();
+
+        assertEquals(expected, actual);
     }
 
-    /**
-     * Empfängt den Befehl der gedrückten Vorzeichenumkehrstaste ("+/-").
-     * Zeigt der Bildschirm einen positiven Wert an, so wird ein "-" links angehängt, der Bildschirm
-     * aktualisiert und die Inhalt fortan als negativ interpretiert.
-     * Zeigt der Bildschirm bereits einen negativen Wert mit führendem Minus an, dann wird dieses
-     * entfernt und der Inhalt fortan als positiv interpretiert.
-     */
-    public void pressNegativeKey() {
-        screen = screen.startsWith("-") ? screen.substring(1) : "-" + screen;
+    @Test
+    @DisplayName("should display zero when multiplying any number by zero")
+    void testMultiplicationByZero() {
+        Calculator calc = new Calculator();
+
+        calc.pressDigitKey(9);
+        calc.pressBinaryOperationKey("*");
+        calc.pressDigitKey(0);
+        calc.pressEqualsKey();
+
+        String expected = "0";  // 9 * 0 = 0
+        String actual = calc.readScreen();
+
+        assertEquals(expected, actual);  // Test schlägt fehl, wenn die Multiplikation mit Null falsch behandelt wird
     }
 
-    /**
-     * Empfängt den Befehl der gedrückten "="-Taste.
-     * Wurde zuvor keine Operationstaste gedrückt, passiert nichts.
-     * Wurde zuvor eine binäre Operationstaste gedrückt und zwei Operanden eingegeben,
-     * wird das Ergebnis der Operation angezeigt. Falls hierbei eine Division durch Null auftritt,
-     * wird "Error" angezeigt.
-     *
-     * Wird die Taste weitere Male gedrückt (ohne andere Tasten dazwischen), so wird die letzte
-     * Operation (ggf. inklusive letztem Operand) erneut auf den aktuellen Bildschirminhalt angewandt
-     * und das Ergebnis direkt angezeigt.
-     *
-     * Das Ergebnis wird formatiert. Wenn das Ergebnis ganzzahlig ist, wird es als Ganzzahl angezeigt.
-     * Andernfalls wird es als Dezimalzahl angezeigt.
-     *
-     * Nach der Ausführung dieser Methode wird die letzte Operation zurückgesetzt
-     * und der Status der letzten gedrückten Taste ebenfalls zurückgesetzt.
-     */
+    @Test
+    @DisplayName("should display error when pressing two operation keys consecutively")
+    void testConsecutiveOperations() {
+        Calculator calc = new Calculator();
 
-    public void pressEqualsKey() {
-        if (latestOperation.isEmpty()) {
-            return; // Keine Operation, nichts tun
-        }
+        calc.pressDigitKey(5);
+        calc.pressBinaryOperationKey("+");
+        calc.pressBinaryOperationKey("+");
+        calc.pressDigitKey(3);
+        calc.pressEqualsKey();
 
-        double result;
-        switch (latestOperation) {
-            case "+":
-                result = latestValue + Double.parseDouble(screen);
-                break;
-            case "-":
-                result = latestValue - Double.parseDouble(screen);
-                break;
-            case "*":
-                result = latestValue * Double.parseDouble(screen);
-                break;
-            case "/":
-                if (Double.parseDouble(screen) == 0) {
-                    screen = "Error"; // Division durch Null
-                    return;
-                }
-                result = latestValue / Double.parseDouble(screen);
-                break;
-            default:
-                return; // Unbekannte Operation, nichts tun
-        }
+        String expected = "Error";  // Der Calculator sollte einen Fehler anzeigen, wenn zwei Operationszeichen direkt hintereinander eingegeben werden
+        String actual = calc.readScreen();
 
-        // Formatieren des Ergebnisses
-        screen = (result == (int) result) ? String.valueOf((int) result) : String.valueOf(result);
-        latestOperation = ""; // Zurücksetzen der letzten Operation
-        lastKeyWasOperation = false; // Zurücksetzen des Status
+        assertEquals(expected, actual);  // Test schlägt fehl, wenn der Calculator keine Fehler bei doppelten Operationszeichen anzeigt
     }
-
 }
+
