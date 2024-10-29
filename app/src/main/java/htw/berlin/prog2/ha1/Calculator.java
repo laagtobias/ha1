@@ -130,11 +130,6 @@ public class Calculator {
      * direkt angezeigt.
      */
     public void pressEqualsKey() {
-        // Sicherstellen, dass eine Operation durchgeführt wurde
-        if (latestOperation.isEmpty()) {
-            return; // Nichts tun, wenn keine Operation vorhanden ist
-        }
-
         double operand = Double.parseDouble(screen); // Aktuellen Wert vom Bildschirm holen
         double result = switch (latestOperation) {
             case "+" -> latestValue + operand;
