@@ -130,26 +130,22 @@ public class Calculator {
      * direkt angezeigt.
      */
     public void pressEqualsKey() {
-        double operand = Double.parseDouble(screen); // Aktuellen Wert vom Bildschirm holen
-        double result = switch (latestOperation) {
-            case "+" -> latestValue + operand;
-            case "-" -> latestValue - operand;
-            case "x" -> latestValue * operand; // Multiplikation bleibt unverändert
-            case "/" -> latestValue / operand; // Division bleibt unverändert
-            default -> throw new IllegalArgumentException("Unbekannte Operation: " + latestOperation);
+        var result = switch(latestOperation) {
+            case "+" -> latestValue + Double.parseDouble(screen);
+            case "-" -> latestValue - Double.parseDouble(screen);
+            case "*" -> latestValue * Double.parseDouble(screen);
+            case "/" -> latestValue / Double.parseDouble(screen);
+            default -> throw new IllegalArgumentException();
         };
 
         // Ergebnis auf dem Bildschirm anzeigen
         // Wenn das Ergebnis 0 ist, zeige "0" an, andernfalls das Ergebnis
         screen = (result == 0) ? "0" : Double.toString(result);
 
-        // Überprüfen, ob das Ergebnis "NaN" oder "Infinity" ist
-        if (screen.equals("NaN") || screen.equals("Infinity")) {
-            screen = "Error";
-        }
-        // Kürzen, wenn es mehr als 10 Zeichen sind
-        if (screen.contains(".") && screen.length() > 11) {
-            screen = screen.substring(0, 10);
-        }
+        // Überprüfen, ob das Ergebnis "Infinity" ist
+        if(screen.equals("Infinity")) screen = "Error";
+        if(screen.endsWith(".0")) screen = screen.substring(0,screen.length()-2);
+        if(screen.contains(".") && screen.length() > 11) screen = screen.substring(0, 10);
     }
 }
+

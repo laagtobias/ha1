@@ -115,7 +115,7 @@ class CalculatorTest {
         Calculator calc = new Calculator(); // Neue Instanz für diesen Test
 
         calc.pressDigitKey(5); // Any number
-        calc.pressBinaryOperationKey("x"); // Multiplication operation
+        calc.pressBinaryOperationKey("*"); // Multiplication operation
         calc.pressDigitKey(0); // Multiply by zero
         calc.pressEqualsKey(); // Press equals key
 
