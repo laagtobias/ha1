@@ -83,16 +83,32 @@ public class Calculator {
     public void pressUnaryOperationKey(String operation) {
         latestValue = Double.parseDouble(screen);
         latestOperation = operation;
-        var result = switch (operation) {
-            case "√" -> Math.sqrt(Double.parseDouble(screen));
-            case "%" -> Double.parseDouble(screen) / 100;
-            case "1/x" -> 1 / Double.parseDouble(screen);
-            default -> throw new IllegalArgumentException();
-        };
-        screen = Double.toString(result);
+
+        switch (operation) {
+            case "√":
+                screen = Double.toString(Math.sqrt(latestValue));
+                break;
+            case "%":
+                screen = Double.toString(latestValue / 100);
+                break;
+            case "1/x":
+                // Überprüfen, ob der Wert 0 ist
+                if (latestValue == 0) {
+                    screen = "Error"; // Setze den Bildschirm auf "Error"
+                    return; // Beende die Ausführung der Methode
+                }
+                screen = Double.toString(1 / latestValue); // 1/x Berechnung
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
+        screen = Double.toString(latestValue);
+        // Fehlerbehandlung für NaN
         if (screen.equals("NaN")) screen = "Error";
+        // Begrenze die Anzahl der Stellen nach dem Komma
         if (screen.contains(".") && screen.length() > 11) screen = screen.substring(0, 10);
     }
+
 
     /**
      * Empfängt den Befehl der gedrückten Dezimaltrennzeichentaste, im

@@ -124,5 +124,20 @@ class CalculatorTest {
 
         assertEquals(expected, actual); // Compare expected with actual
     }
+
+    @Test
+    @DisplayName("should display error when inverting zero")
+    void testInverseOfZero() {
+        Calculator calc = new Calculator(); // Neue Instanz für diesen Test
+
+        calc.pressDigitKey(0); // Zifferntaste 0 drücken
+        calc.pressUnaryOperationKey("1/x"); // Inversions-Taste drücken
+
+        String expected = "Error"; // Erwartung: "Error" als String
+        String actual = calc.readScreen(); // Ergebnis als String abrufen
+
+        assertEquals(expected, actual); // Erwartetes mit aktuellem Ergebnis vergleichen
+    }
+
 }
 
